@@ -1,0 +1,88 @@
+<!-- This is a static file -->
+<!-- served from your routes in server.js -->
+
+<!-- You might want to try something fancier: -->
+<!-- html/nunjucks docs: https://mozilla.github.io/nunjucks/ -->
+<!-- pug: https://pugjs.org/ -->
+<!-- haml: http://haml.info/ -->
+<!-- hbs(handlebars): http://handlebarsjs.com/ -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Solcast API - Sandbox</title>
+    <meta name="description" content="Solcast API">
+    <link id="favicon" rel="icon" href="https://glitch.com/edit/favicon-app.ico" type="image/x-icon">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header>
+      <h1>
+        Solcast API - Demo
+      </h1>      
+      <h3>
+        Reference API - <a target="_blank" href="https://solcast.com.au/api/">docs</a>
+      </h3>      
+    </header>
+    <div id="mapid"></div>      
+    <section id="resultSection" class="results">
+      <div id="results" class="results">
+      </div>
+    </section>
+    <footer>
+      <a href="https://glitch.com/edit/#!/remix/solcast-demo">
+        Remix this in Glitch
+      </a>
+    </footer>
+
+    <!-- Your web-app is https, so your scripts need to be too -->
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"
+            integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
+            crossorigin="anonymous"></script>
+    <script src="/client.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.js"></script>
+    <script src="/leaflet-terminator.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>    
+    <script>
+      
+      window.world = {
+        map: L.map('mapid', {
+            worldCopyJump: true
+        }),
+        sites: L.featureGroup ()
+      };      
+      window.world.map.setView([47.59909, -122.33136], 13);
+
+      var osm = {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      };
+      
+      
+      window.world.map.fitBounds([ [-43.6345972634, 113.338953078], [-10.6681857235, 153.569469029] ]); // Australia
+      L.tileLayer(osm.url, {
+          attribution: osm.attribution
+      }).addTo(window.world.map);
+      window.world.map.addLayer(window.world.sites);
+      
+      L.tileLayer(osm.url, {
+        maxZoom: 18,
+        attribution: osm.attribution
+      }).addTo(window.world.map);
+      
+      addDayNight();
+      
+      window.world.map.on("click", function(e) {
+        debugger;
+        window.world.sites.clearLayers();        
+        var clickLocation = e.latlng.wrap();
+        addMarker(clickLocation);
+      });
+      
+    </script>
+  </body>
+</html>
