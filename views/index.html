@@ -29,6 +29,7 @@
     </header>
     <div id="mapid"></div>      
     <section id="resultSection" class="results">
+      <h3 id="resultsHeader"></h3>
       <div id="results" class="results">
       </div>
     </section>
@@ -60,10 +61,8 @@
       var osm = {
           url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      };
+      };      
       
-      
-      window.world.map.fitBounds([ [-43.6345972634, 113.338953078], [-10.6681857235, 153.569469029] ]); // Australia
       L.tileLayer(osm.url, {
           attribution: osm.attribution
       }).addTo(window.world.map);
@@ -83,6 +82,8 @@
         addMarker(clickLocation);
       });
       
+      window.world.map.fitBounds([ [-43.6345972634, 113.338953078], [-10.6681857235, 153.569469029] ]); // Australia       
+      tryGuessPosition();        
     </script>
   </body>
 </html>

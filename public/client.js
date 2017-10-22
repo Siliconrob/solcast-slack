@@ -4,20 +4,37 @@
 // by default, you've got jQuery,
 // add other scripts at the bottom of index.html
 
+function tryGuessPosition() {
+  
+  try {
+    $.getJSON('//jsonip.com/?callback=?', function(positionData) {      
+      $.getJSON( '//freegeoip.net/json/' + positionData.ip + '?callback=?', function(ipData) {
+        console.log(JSON.stringify(ipData, null, 2));
+        world.map.panTo(L.latLng(ipData.latitude, ipData.longitude));
+      });    
+      console.log(JSON.stringify(positionData, null, 2));
+    });      
+  }
+  catch (err) {
+    console.log(err);
+  }
+  
+}
+
 function addDayNight() {
-  var dayNightOverlay = L.terminator();
+  const dayNightOverlay = L.terminator();
   dayNightOverlay.addTo(window.world.map);
   setInterval(function() {updateTerminator(dayNightOverlay)}, 60 * 1000);
     function updateTerminator(dayNightOverlay) {
-      var nextDayNightOverlay = L.terminator();
+      const nextDayNightOverlay = L.terminator();
       dayNightOverlay.setLatLngs(nextDayNightOverlay.getLatLngs());
       dayNightOverlay.redraw();
   };  
 };
 
 function addMarker(latLng) {
-    var parsed = Object.assign({},{ lat: 0, lng: 0}, latLng);
-    var markerOptions = {radius: 8,
+    let parsed = Object.assign({},{ lat: 0, lng: 0}, latLng);
+    const markerOptions = {radius: 8,
         fillOpacity: 1,
         color: 'black',
         fillColor: getRandomColor(),
@@ -27,7 +44,7 @@ function addMarker(latLng) {
     parsed.lat = parsed.lat.toFixed(6);
     parsed.lng = parsed.lng.toFixed(6);
 
-    var marker = L.circleMarker(L.latLng(parsed.lat, parsed.lng), markerOptions);
+    const marker = L.circleMarker(L.latLng(parsed.lat, parsed.lng), markerOptions);
     marker.bindTooltip(`Latitude: ${parsed.lat}<br/>Longitude: ${parsed.lng}`);
     window.world.sites.addLayer(marker);
     window.world.map.panTo(marker.getLatLng());
@@ -35,19 +52,20 @@ function addMarker(latLng) {
 };  
 
 function getRandomColor() {
-    var letters = '0123456789ABCDEF';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
 };
 
-function readResults(data) {
-  $("#results").empty();  
-  var tbl = d3.select("#results")
+function displayResults(data) {
+  $("#results").empty();
+  
+  let tbl = d3.select("#results")
       .append("table")
-      .style("overflow", "auto")
+      .style("overflow", "scroll")
       .style("display", "block")
       .style("max-height", "300px")
       .style("max-width", "800px")
@@ -83,12 +101,15 @@ function readResults(data) {
 };
 
 function getLocationForecast(latLng) {
-    var parsed = Object.assign({},{ lat: 0, lng: 0}, latLng);
-
+    const parsed = Object.assign({},{ lat: 0, lng: 0}, latLng);
+    
     $.post('/locationDetails?' + $.param({
         lat: parsed.lat,
         lng: parsed.lng
-      }), readResults);
+      }), (results) => {
+      $("#resultsHeader").text(`Radiation: (${parsed.lat}, ${parsed.lng})`);  
+      displayResults(results);
+    });
 };
 
 $(function() {
