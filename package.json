@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "express": "^4.16.2",
-    "solcast": "^0.0.5"
+    "solcast": "^0.0.6"
   },
   "engines": {
     "node": "8.x"
