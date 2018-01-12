@@ -35,7 +35,8 @@ app.post("/locationPower", function (request, response) {
         return current;
       }
     }).map(k => {
-      const timestamp = k.period_end.toLocaleString('en-GB', { timeZone: 'UTC' });
+      const timestamp =  new Date(k.period_end).toLocaleString('en-GB', { timeZone: 'UTC' });
+      console.log(timestamp);
       return `${timestamp} - ${k.pv_estimate}`;
     });
     response.send(filtered_results);
