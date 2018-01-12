@@ -8,22 +8,23 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index.html');
 });
 
-app.post("/locationDetails", function (request, response) {  
+app.post("/power", function (request, response) {  
   const position = {
-    lat: request.body.lat,    
-    lng: request.body.lng,
+    lat: request.params.lat,    
+    lng: request.params.lng
   } 
-  console.log(`Location received: (${position.lat}, ${position.lng})`);  
+  console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
   const options = solcast.Options.power();
-  radiationOptions.APIKey = process.env.SOLCAST_API_KEY;
+  options.APIKey = process.env.SOLCAST_API_KEY;
+  options.Capacity = 1000;
   
-  const results = solcast.Radiation.forecast(point, radiationOptions);
+  const results = solcast.Power.forecast(point, options);
   results.then(results => {    
     response.send(results.forecasts);
   })
   .catch(err => { console.log(err); });  
-}
+});
 
 app.post("/locationDetails", function (request, response) {  
   const position = {
@@ -32,10 +33,10 @@ app.post("/locationDetails", function (request, response) {
   } 
   console.log(`Location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
-  const radiationOptions = solcast.Options.radiation();
-  radiationOptions.APIKey = process.env.SOLCAST_API_KEY;
+  const options = solcast.Options.radiation();
+  options.APIKey = process.env.SOLCAST_API_KEY;
   
-  const results = solcast.Radiation.forecast(point, radiationOptions);
+  const results = solcast.Radiation.forecast(point, options);
   results.then(results => {    
     response.send(results.forecasts);
   })
