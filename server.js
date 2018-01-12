@@ -35,12 +35,10 @@ app.post("/locationPower", function (request, response) {
         return current;
       }
     }).map(k => {
-      return `${k.period_end.to}`;
+      const timestamp = k.period_end.toLocaleString('en-GB', { timeZone: 'UTC' });
+      return `${timestamp} - ${k.pv_estimate}`;
     });
-    
-    
-    
-    response.send(today);
+    response.send(filtered_results);
   })
   .catch(err => { console.log(err); });  
 });
