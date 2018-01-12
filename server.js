@@ -10,16 +10,17 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index.html');
 });
 
-app.post("/power", function (request, response) { 
+app.post("/locationPower", function (request, response) { 
   const position = {
-    lat: request.params.lat,    
-    lng: request.params.lng
-  } 
+    lat: request.body.lat,    
+    lng: request.body.lng    
+  };  
+  
   console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
   const options = solcast.Options.power();
   options.APIKey = process.env.SOLCAST_API_KEY;
-  options.Capacity = 1000;
+  options.Capacity = request.body.capacity || 1000;
   
   const results = solcast.Power.forecast(point, options);
   results.then(results => {    
@@ -32,7 +33,8 @@ app.post("/locationDetails", function (request, response) {
   const position = {
     lat: request.query.lat,    
     lng: request.query.lng,
-  } 
+  };
+  
   console.log(`Location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
   const options = solcast.Options.radiation();
