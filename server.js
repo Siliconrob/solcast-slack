@@ -1,20 +1,19 @@
 const express = require('express');
 const app = express();
+var bodyParser = require('body-parser');
 const solcast = require('solcast');
 
 app.use(express.static('public'));
+app.use(bodyParser.urlencoded());
 
 app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index.html');
 });
 
 app.post("/power", function (request, response) { 
-  
-  console.log(request.body);
-  
   const position = {
-    lat: request.body.lat,    
-    lng: request.body.lng
+    lat: request.params.lat,    
+    lng: request.params.lng
   } 
   console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
