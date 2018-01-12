@@ -81,8 +81,12 @@ app.post("/locationPower", function (request, response) {
           return `${timestamp}: ${k.pv_estimate.toFixed(2)}`;
         });
         filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
-        filtered_results.unshift(`${location.display_name}`);
-        response.send(filtered_results.join('\n'));
+        filtered_results.unshift(`${location.display_name}`);        
+        const formatted = filtered_results.join('\n');
+        response.json({ 
+          response_type: 'in_channel', // public to the channel
+          text: formatted
+        });
       })
       .catch(err => { console.log(err); });    
   });
