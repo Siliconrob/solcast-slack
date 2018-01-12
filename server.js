@@ -25,7 +25,14 @@ app.post("/locationPower", function (request, response) {
   options.Capacity = request.body.capacity || 1000;
   
   const results = solcast.Power.forecast(point, options);
-  results.then(results => {    
+  results.then(results => {
+    
+    var now = Date.now()
+    var today = results.forecasts.filter(z => {
+      var current = new Date(z.period_end);
+      if (current.
+    });
+    
     response.send(results.forecasts);
   })
   .catch(err => { console.log(err); });  
