@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
-var bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
+const rp = require('request-promise');
 const solcast = require('solcast');
 
 app.use(express.static('public'));
@@ -11,20 +12,22 @@ app.get("/", function (request, response) {
 });
 
 app.post("/locationPower", function (req, res) {   
-  console.log(request.body);    
-  const options = {
-    url: 'http://nominatim.openstreetmap.org/search',
-    method: 'GET',
-    qs: { q: req.body.text, format: 'json', limit: 1 }
+  console.log(req.body);    
+  var options = {
+      uri: 'http://nominatim.openstreetmap.org/search',
+      method: 'GET',
+      qs: {q: req.body.text, format: 'json', limit: 1 },
+      json: true
   };
   
-  // Start the request
-  request(options, function (error, res, body) {
-    if (!error && res.statusCode == 200) {
-        // Print out the response body
-        console.log(body);
-        res.send("hello");
-    }});
+  rp(options).then(function (data) {
+    console.log(data);
+    response.send(data);
+  })
+  .catch(function (err) {
+    response.send(err);
+  });  
+  
 });
 
 const listener = app.listen(process.env.PORT, function () {
