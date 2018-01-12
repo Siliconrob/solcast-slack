@@ -9,6 +9,10 @@ app.use(express.static('public'));
 app.use(bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get("/", function (request, response) {
+  response.sendFile(__dirname + '/index.html');
+});
+
 app.post("/locationPower", function (request, response) {   
   return Promise.try(function() {    
       var options = {
