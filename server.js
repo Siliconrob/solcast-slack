@@ -8,10 +8,13 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index.html');
 });
 
-app.post("/power", function (request, response) {  
+app.post("/power", function (request, response) { 
+  
+  console.log(request.body);
+  
   const position = {
-    lat: request.params.lat,    
-    lng: request.params.lng
+    lat: request.body.lat,    
+    lng: request.body.lng
   } 
   console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
