@@ -13,10 +13,28 @@ app.get("/", function (request, response) {
 app.post("/locationPower", function (request, response) { 
   
   console.log(request.body);  
+  
+  const options = {
+    url: 'http://nominatim.openstreetmap.org/search',
+    method: 'GET',
+    headers: headers,
+    qs: { q: request.body.text, format: 'json', limit: 1 }
+  };
+  
+  // Start the request
+  request(options, function (error, res, body) {
+    if (!error && res.statusCode == 200) {
+        // Print out the response body
+        console.log(body)
+    };
+  
   const position = {
     lat: 32, //request.body.lat,    
     lng: -97 //request.body.lng    
   };
+  
+  request.
+  
   
   console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
