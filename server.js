@@ -13,21 +13,25 @@ app.get("/", function (request, response) {
 
 app.post("/locationPower", function (req, res) {   
   console.log(req.body);    
-  var options = {
-      uri: 'http://nominatim.openstreetmap.org/search',
-      method: 'GET',
-      qs: {q: req.body.text, format: 'json', limit: 1 },
-      json: true
-  };
-  
-  rp(options).then(function (data) {
-    console.log(data);
-    response.send(data);
-  })
-  .catch(function (err) {
-    response.send(err);
-  });  
-  
+  return Promise.try(function() {    
+      var options = {
+        uri: 'http://nominatim.openstreetmap.org/search',
+        method: 'GET',
+        qs: {q: req.body.text, format: 'json', limit: 1 },
+        json: true
+      };
+      return rp(options).then(function (data) {
+          console.log(data);
+          response.send(data);
+        })
+        .catch(function (err) {
+          response.send(err);
+        });
+      return doSomeAsyncThing();
+    }).then(function(newValue) {
+      res.send("Done!");
+  });
+
 });
 
 const listener = app.listen(process.env.PORT, function () {
