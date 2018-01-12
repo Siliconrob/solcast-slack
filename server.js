@@ -6,7 +6,8 @@ const solcast = require('solcast');
 const Promise = require("bluebird");
 
 app.use(express.static('public'));
-app.use(bodyParser.urlencoded());
+app.use(bodyParser.json()); 
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index.html');
