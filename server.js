@@ -27,13 +27,20 @@ app.post("/locationPower", function (request, response) {
   const results = solcast.Power.forecast(point, options);
   results.then(results => {
     
-    var now = Date.now()
-    var today = results.forecasts.filter(z => {
+    var now = new Date;
+    var utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 6, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
+    var filtered_results = results.forecasts.filter(z => {
       var current = new Date(z.period_end);
-      if (current.
+      if (current < utc_timestamp) {
+        return current;
+      }
+    }).map(k => {
+      return `${k.period_end.to}`;
     });
     
-    response.send(results.forecasts);
+    
+    
+    response.send(today);
   })
   .catch(err => { console.log(err); });  
 });
