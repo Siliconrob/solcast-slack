@@ -11,10 +11,12 @@ app.get("/", function (request, response) {
 });
 
 app.post("/locationPower", function (request, response) { 
+  
+  console.log(request.body);  
   const position = {
-    lat: request.body.lat,    
-    lng: request.body.lng    
-  };  
+    lat: 32, //request.body.lat,    
+    lng: -97 //request.body.lng    
+  };
   
   console.log(`Power location received: (${position.lat}, ${position.lng})`);  
   const point = solcast.latLng(position.lat, position.lng);
