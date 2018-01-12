@@ -44,6 +44,39 @@ app.get('/slack', function(req, res){
   })
 });
 
+function powerForecast(location, hoursAhead) {
+  const position = {
+    lat: Number(location.lat),
+    lng: Number(location.lon)
+  };    
+
+  console.log(`Power location received: (${position.lat}, ${position.lng})`);  
+  const point = solcast.latLng(position.lat, position.lng);
+  const options = solcast.Options.power();
+  options.APIKey = process.env.SOLCAST_API_KEY;
+  options.Capacity = 1000;
+
+  const results = solcast.Power.forecast(point, options);
+  results.then(results => {
+    let now = new Date;
+    let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + hoursAhead, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
+    let filtered_results = results.forecasts.filter(z => {
+      let current = new Date(z.period_end);
+      if (current < utc_timestamp) {
+      return current;
+      }
+    }).map(k => {
+      const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
+      return `${timestamp}: ${k.pv_estimate.toFixed(2)}`;
+    });
+
+    filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
+    filtered_results.unshift(`${location.display_name}`);        
+    return filtered_results;
+  });
+  return results;
+};
+
 app.post("/locationPower", function (request, response) {   
   return Promise.try(function() {    
       var options = {
@@ -55,42 +88,15 @@ app.post("/locationPower", function (request, response) {
       return rp(options).then(function (results) {
           return results.shift();        
         });
-    }).then(function(location) {    
-      const position = {
-        lat: Number(location.lat),
-        lng: Number(location.lon)
-      };    
-
-    console.log(`Power location received: (${position.lat}, ${position.lng})`);  
-      const point = solcast.latLng(position.lat, position.lng);
-      const options = solcast.Options.power();
-      options.APIKey = process.env.SOLCAST_API_KEY;
-      options.Capacity = 1000;
-
-      const results = solcast.Power.forecast(point, options);
-      results.then(results => {
-        let now = new Date;
-        let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 6, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
-        let filtered_results = results.forecasts.filter(z => {
-          let current = new Date(z.period_end);
-          if (current < utc_timestamp) {
-            return current;
-          }
-        }).map(k => {
-          const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
-          return `${timestamp}: ${k.pv_estimate.toFixed(2)}`;
-        });
-        filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
-        filtered_results.unshift(`${location.display_name}`);        
+    }).then(function(location) {
+        const filtered_results = powerForecast(location, 6); 
         const formatted = filtered_results.join('\n');
         response.json({ 
           response_type: 'in_channel', // public to the channel
           text: formatted
         });
       })
-      .catch(err => { console.log(err); });    
-  });
-
+      .catch(err => { console.log(err); });
 });
 
 const listener = app.listen(process.env.PORT, function () {
