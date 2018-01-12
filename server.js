@@ -37,20 +37,19 @@ app.post("/locationPower", function (request, response) {
 
       const results = solcast.Power.forecast(point, options);
       results.then(results => {
-        var now = new Date;
-        var utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 4, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
-        var filtered_results = results.forecasts.filter(z => {
-        var current = new Date(z.period_end);
-        if (current < utc_timestamp) {
-        return current;
-        }
+        let now = new Date;
+        let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + 6, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
+        let filtered_results = results.forecasts.filter(z => {
+          let current = new Date(z.period_end);
+          if (current < utc_timestamp) {
+            return current;
+          }
         }).map(k => {
-        const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
-        return `${timestamp}: ${k.pv_estimate}`;
+          const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
+          return `${timestamp}: ${k.pv_estimate.toFixed(2)}`;
         });
-        
-        filtered_results.
-        
+        filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
+        filtered_results.unshift(`${location.display_name}`);
         response.send(filtered_results.join('\n'));
       })
       .catch(err => { console.log(err); });    
