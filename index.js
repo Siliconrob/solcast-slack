@@ -67,9 +67,10 @@ function powerForecast(response, location, hoursAhead) {
         }
       }).map(k => {
         const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
-        return `${timestamp}: ${k.pv_estimate.toFixed(2)}`;
+        return `${timestamp}: ${k.pv_estimate.toFixed(2)} kW`;
       });
 
+      filtered_results.unshift(`PV System Capacity 1000 kW`);
       filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
       filtered_results.unshift(`${location.display_name}`);
       const formatted = filtered_results.join('\n');
