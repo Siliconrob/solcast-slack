@@ -14,6 +14,14 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/index.html');
 });
 
+app.get("/privacy", function (request, response) {
+  response.sendFile(__dirname + '/privacy.html');
+});
+
+app.get("/support", function (request, response) {
+  response.sendFile(__dirname + '/support.html');
+});
+
 app.get('/slack', function(req, res){
   if (!req.query.code) { // access denied
     res.redirect('https://solcast-slack.glitch.me/');
