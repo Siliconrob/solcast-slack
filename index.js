@@ -52,6 +52,30 @@ app.get('/slack', function(req, res){
   })
 });
 
+function formatPower(powerResults, hoursAhead) {
+  let now = new Date;
+  let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + hoursAhead, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
+  const filtered_results = powerResults.filter(z => {
+    let current = new Date(z.period_end);
+    if (current < utc_timestamp) {
+      return current;
+    }
+  }).map(k => {
+    const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC"; 
+    return `${timestamp} - Cloud Cover: ${k.cloud_opacity}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
+  });
+  return filtered_results;
+};
+
+function mergeResults(powerResults, radResults) {
+  const merged = powerResults.forecasts.map((current, index) => {
+    const radValue = radResults.forecasts[index];                
+    const mergeValue = Object.assign(radValue, current);
+    return mergeValue;
+  });
+  return merged;
+};
+
 function powerForecast(response, location, hoursAhead) {
     const position = {
       lat: Number(location.lat),
@@ -60,34 +84,30 @@ function powerForecast(response, location, hoursAhead) {
 
     console.log(`Power location received: (${position.lat}, ${position.lng})`);  
     const point = solcast.latLng(position.lat, position.lng);
-    const options = solcast.Options.power();
-    options.APIKey = process.env.SOLCAST_API_KEY;
-    options.Capacity = 1000;
-
-    const results = solcast.Power.forecast(point, options);
-    results.then(results => {
-      let now = new Date;
-      let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + hoursAhead, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
-      let filtered_results = results.forecasts.filter(z => {
-        let current = new Date(z.period_end);
-        if (current < utc_timestamp) {
-        return current;
-        }
-      }).map(k => {
-        const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC";      
-        return `${timestamp}: ${k.pv_estimate.toFixed(2)} kW`;
-      });
-
-      filtered_results.unshift(`PV System Capacity 1000 kW`);
+  
+    const options = {
+      Radiation: solcast.Options.radiation(),
+      Power: solcast.Options.power()
+    };          
+    options.Radiation.APIKey = process.env.SOLCAST_API_KEY;
+    options.Power.APIKey = process.env.SOLCAST_API_KEY;
+    options.Power.Capacity = 1000;
+  
+    const powerResults = solcast.Power.forecast(point, options.Power);  
+    const radiationResults = solcast.Radiation.forecast(point, options.Radiation);
+  
+    Promise.all([powerResults, radiationResults]).then(function(results) {      
+      const merged = mergeResults(results[0], results[1]);      
+      let filtered_results = formatPower(merged, hoursAhead);
+      filtered_results.unshift(`PV System Capacity ${options.Power.Capacity} kW`);
       filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
       filtered_results.unshift(`${location.display_name}`);
       const formatted = filtered_results.join('\n');
       response.json({ 
         response_type: 'in_channel', // public to the channel
         text: formatted
-      });          
-    })
-  .catch(err => { console.log(err); });  
+      });
+    });  
 };
 
 app.post("/locationPower", function (request, response) {   
@@ -99,7 +119,10 @@ app.post("/locationPower", function (request, response) {
         json: true
       };
       return rp(options).then(function (results) {
-          return results.shift();        
+          if ((results || []).length > 0) {
+            return results.shift();        
+          }
+          console.log(`No results returned unable to send lat/lng to Solcast API`);
         });
     }).then(function(location) {
       powerForecast(response, location, 6);
