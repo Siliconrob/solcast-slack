@@ -110,12 +110,29 @@ function powerForecast(response, location, hoursAhead) {
     });  
 };
 
-app.post("/locationPower", function (request, response) {   
+app.post("/locationPower", function (request, response) {
+  
+  const inputText = (request.body.text || "").trim();
+  
+  if(request.body.token !== process.env.SLACK_VERIFICATION_TOKEN) {
+    // the request is NOT coming from Slack!
+    response.sendStatus(403); // Forbidden
+    return;
+  }
+  
+  if (inputText.toLowerCase() === "help".toLowerCase()) {
+    response.json({
+        response_type: 'ephemeral', // private to user
+        text: 'Type the *location* you wish to obtain a Solar Power Forecast such as `/forecast Sydney` to obtain a forecast for *Sydney*' 
+    });
+    return;
+  }
+  
   return Promise.try(function() {    
       var options = {
         uri: 'http://nominatim.openstreetmap.org/search',
         method: 'GET',
-        qs: {q: request.body.text, format: 'json', limit: 1 },
+        qs: {q: inputText, format: 'json', limit: 1 },
         json: true
       };
       return rp(options).then(function (results) {
