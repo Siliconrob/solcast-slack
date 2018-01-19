@@ -62,7 +62,7 @@ function formatPower(powerResults, hoursAhead) {
     }
   }).map(k => {
     const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC"; 
-    return `${timestamp} - Cloud Cover: ${k.cloud_opacity}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
+    return `${timestamp} - Cloud Cover: ${k.cloud_opacity.pad(3)}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
   });
   return filtered_results;
 };
@@ -75,6 +75,12 @@ function mergeResults(powerResults, radResults) {
   });
   return merged;
 };
+
+Number.prototype.pad = function(size) {
+  var s = String(this);
+  while (s.length < (size || 2)) {s = " " + s;}
+  return s;
+}
 
 function powerForecast(response, location, hoursAhead) {
     const position = {
@@ -99,13 +105,19 @@ function powerForecast(response, location, hoursAhead) {
     Promise.all([powerResults, radiationResults]).then(function(results) {      
       const merged = mergeResults(results[0], results[1]);      
       let filtered_results = formatPower(merged, hoursAhead);
-      filtered_results.unshift(`PV System Capacity ${options.Power.Capacity} kW`);
+      filtered_results.unshift(`PV System Capacity ${options.Power.Capacity} kW :battery:`);
       filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
       filtered_results.unshift(`${location.display_name}`);
       const formatted = filtered_results.join('\n');
       response.json({ 
         response_type: 'in_channel', // public to the channel
         text: formatted
+      });
+    }).catch(function(err) {
+      console.log(err.message); 
+      response.json({
+          response_type: 'ephemeral', // private to user
+          text: ":rotating_light: Something went wrong.  Please contact support if this continues."
       });
     });  
 };
@@ -118,7 +130,7 @@ app.post("/locationPower", function (request, response) {
     // the request is NOT coming from Slack!
     response.sendStatus(403); // Forbidden
     return;
-  }
+  }  
   
   if (inputText.toLowerCase() === "help".toLowerCase()) {
     response.json({
@@ -138,11 +150,25 @@ app.post("/locationPower", function (request, response) {
       return rp(options).then(function (results) {
           if ((results || []).length > 0) {
             return results.shift();        
-          }
+          }        
           console.log(`No results returned unable to send lat/lng to Solcast API`);
         });
     }).then(function(location) {
-      powerForecast(response, location, 6);
+      location = location || {};
+      if (location.hasOwnProperty("lat")) {
+        powerForecast(response, location, 6);
+        return;
+      }
+      response.json({
+          response_type: 'ephemeral', // private to user
+          text: ":interrobang: Unable to geocode location *`" + inputText + "`* to a valid Latitude/Longitude."
+      });
+  }).catch(function(err) {
+    console.log(err.message); 
+    response.json({
+        response_type: 'ephemeral', // private to user
+        text: ":rotating_light: Something went wrong.  Please contact support if this continues."
+    });    
   });
 });
 
