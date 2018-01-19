@@ -82,6 +82,39 @@ Number.prototype.pad = function(size) {
   return s;
 }
 
+function locationEmoji(location) {
+  
+  if ((location.lng < -25) && (location.lng > -180)) {
+    return ':earth_americas:'
+  }
+  if (location.lng < 39) {
+    return ':earth_africa:'
+  }  
+  return ':earth_asia:';    
+}
+
+function createAttachments(location) {
+  
+    const lat = location.lat.toFixed(6);
+    const lng = location.lng.toFixed(6);
+    return [
+        {
+            fallback: `${lat},${lng}`,
+            color: "#000000",
+            title: `${lat},${lng} ${locationEmoji(location)}`,
+            title_link: `http://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=12`,
+            text: "OpenStreetMap link to geocoded location"
+        },
+        {
+            fallback: `${lat},${lng}`,
+            color: "#000000",
+            title: `Weather :satellite:`,
+            title_link: `https://darksky.net/forecast/${lat},${lng}/us12/en`,
+            text: "DarkSky Forecast for location"
+        }      
+    ]
+}
+
 function powerForecast(response, location, hoursAhead) {
     const position = {
       lat: Number(location.lat),
@@ -111,7 +144,8 @@ function powerForecast(response, location, hoursAhead) {
       const formatted = filtered_results.join('\n');
       response.json({ 
         response_type: 'in_channel', // public to the channel
-        text: formatted
+        text: formatted,
+        attachments: createAttachments(position)
       });
     }).catch(function(err) {
       console.log(err.message); 
