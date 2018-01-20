@@ -109,8 +109,8 @@ function createAttachments(location) {
             fallback: `${lat},${lng}`,
             color: "#000000",
             title: `Weather :satellite:`,
-            title_link: `https://darksky.net/forecast/${lat},${lng}/us12/en`,
-            text: "DarkSky Forecast for location"
+            title_link: `https://maps.darksky.net/@cloud_cover,${lat},${lng},8`,
+            text: "DarkSky Cloud Map for location"
         }      
     ]
 }
