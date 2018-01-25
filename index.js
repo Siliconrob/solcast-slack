@@ -52,7 +52,7 @@ app.get('/slack', function(req, res){
   })
 });
 
-function formatPower(powerResults, hoursAhead) {
+function formatPower(powerResults, hoursAhead, localeOffsetSeconds) {
   let now = new Date;
   let utc_timestamp = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() + hoursAhead, now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
   const filtered_results = powerResults.filter(z => {
@@ -60,9 +60,14 @@ function formatPower(powerResults, hoursAhead) {
     if (current < utc_timestamp) {
       return current;
     }
-  }).map(k => {
-    const timestamp = k.period_end.replace('T',' ').split('.')[0]+" UTC"; 
-    return `${timestamp} - Cloud Cover: ${k.cloud_opacity.pad(3)}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
+  }).map(k => {    
+    let outText = k.period_end.replace('T',' ').split('.')[0]+" UTC";
+    if (localeOffsetSeconds !== null) {
+      let timestamp = new Date(k.period_end);
+      timestamp.setSeconds(timestamp.getSeconds() + localeOffsetSeconds);
+      outText = timestamp.toISOString().replace('T',' ').split('.')[0];      
+    }
+    return `${outText} - Cloud Cover: ${k.cloud_opacity.pad(3)}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
   });
   return filtered_results;
 };
@@ -104,15 +109,41 @@ function createAttachments(location) {
             title: `${lat},${lng} ${locationEmoji(location)}`,
             title_link: `http://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=12`,
             text: "OpenStreetMap link to geocoded location"
-        },
-        {
-            fallback: `${lat},${lng}`,
-            color: "#000000",
-            title: `Weather :satellite:`,
-            title_link: `https://maps.darksky.net/@cloud_cover,${lat},${lng},8`,
-            text: "DarkSky Cloud Map for location"
         }      
     ]
+}
+
+function getTimeOffset(location) {  
+    const locationText = `${location.lat.toFixed(6)},${location.lng.toFixed(6)}`;  
+    const ts = Math.round((new Date()).getTime() / 1000);
+
+    let time_params = {
+      location: locationText,
+      timestamp: ts
+    };
+  
+    if (process.env.GOOGLE_API_KEY !== "") {
+      time_params.key = process.env.GOOGLE_API_KEY
+    }
+  
+    const options = {
+      uri: 'https://maps.googleapis.com/maps/api/timezone/json',
+      method: 'GET',
+      qs: time_params,
+      json: true
+    };
+    const getTime = rp(options);
+    return getTime;  
+}
+
+function localeOffsetSeconds(timeResults) {
+  
+  timeResults = timeResults || {};
+  if (timeResults.status.toUpperCase() !== "OK".toUpperCase()) {
+    return null;
+  }
+  const offsetSeconds = timeResults.dstOffset + timeResults.rawOffset;
+  return offsetSeconds;  
 }
 
 function powerForecast(response, location, hoursAhead) {
@@ -134,10 +165,13 @@ function powerForecast(response, location, hoursAhead) {
   
     const powerResults = solcast.Power.forecast(point, options.Power);  
     const radiationResults = solcast.Radiation.forecast(point, options.Radiation);
+    const timeOffset = getTimeOffset(position);
   
-    Promise.all([powerResults, radiationResults]).then(function(results) {      
+    Promise.all([powerResults, radiationResults, timeOffset]).then(function(results) {      
       const merged = mergeResults(results[0], results[1]);      
-      let filtered_results = formatPower(merged, hoursAhead);
+      
+      const offset = localeOffsetSeconds(results[2]);      
+      let filtered_results = formatPower(merged, hoursAhead, offset);
       filtered_results.unshift(`PV System Capacity ${options.Power.Capacity} kW :battery:`);
       filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
       filtered_results.unshift(`${location.display_name}`);
