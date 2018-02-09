@@ -67,7 +67,7 @@ function formatPower(powerResults, hoursAhead, localeOffsetSeconds) {
       timestamp.setSeconds(timestamp.getSeconds() + localeOffsetSeconds);
       outText = timestamp.toISOString().replace('T',' ').split('.')[0];      
     }
-    return `${outText} - Cloud Cover: ${k.cloud_opacity.pad(3)}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
+    return `${outText} - Cloud Opacity: ${k.cloud_opacity.pad(3)}%, Power: ${k.pv_estimate.toFixed(2)} kW`;
   });
   return filtered_results;
 };
@@ -173,7 +173,6 @@ function powerForecast(response, location, hoursAhead) {
       const offset = localeOffsetSeconds(results[2]);      
       let filtered_results = formatPower(merged, hoursAhead, offset);
       filtered_results.unshift(`PV System Capacity ${options.Power.Capacity} kW :battery:`);
-      filtered_results.unshift(`Latitude: ${position.lat.toFixed(6)}, Longitude: ${position.lng.toFixed(6)}`);        
       filtered_results.unshift(`${location.display_name}`);
       const formatted = filtered_results.join('\n');
       response.json({ 
@@ -210,9 +209,9 @@ app.post("/locationPower", function (request, response) {
   
   return Promise.try(function() {    
       var options = {
-        uri: 'http://nominatim.openstreetmap.org/search',
+        uri: 'https://us1.locationiq.org/v1/search.php',
         method: 'GET',
-        qs: {q: inputText, format: 'json', limit: 1 },
+        qs: {q: inputText, format: 'json', key: process.env.LOCATIONIQ_KEY },
         json: true
       };
       return rp(options).then(function (results) {
